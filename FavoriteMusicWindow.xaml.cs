@@ -11,12 +11,14 @@ namespace MusicPlayer
     {
         private string favoritesFilePath = @"C:\Users\Roman\Desktop\Favorite Music\Favorites.txt";
         private MediaPlayer mediaPlayer;
+        private bool isRepeatMode = false; 
 
         public FavoriteMusicWindow()
         {
             InitializeComponent();
             mediaPlayer = new MediaPlayer();
             LoadFavoriteSongs();
+            mediaPlayer.MediaEnded += MediaPlayer_MediaEnded; 
         }
 
         private void LoadFavoriteSongs()
@@ -24,7 +26,7 @@ namespace MusicPlayer
             if (File.Exists(favoritesFilePath))
             {
                 var favoriteSongs = File.ReadAllLines(favoritesFilePath);
-                FavoriteMusicListBox.ItemsSource = favoriteSongs.Select(Path.GetFileName).ToList();
+                FavoriteSongsComboBox.ItemsSource = favoriteSongs.Select(Path.GetFileName).ToList();
             }
             else
             {
@@ -32,17 +34,17 @@ namespace MusicPlayer
             }
         }
 
-        private void FavoriteMusicListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void FavoriteSongsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (FavoriteMusicListBox.SelectedItem != null)
+            if (FavoriteSongsComboBox.SelectedItem != null)
             {
-                string selectedSong = (string)FavoriteMusicListBox.SelectedItem;
+                string selectedSong = (string)FavoriteSongsComboBox.SelectedItem;
                 string songPath = Path.Combine(@"C:\Users\Roman\Desktop\Music", selectedSong);
 
                 try
                 {
-                    mediaPlayer.Stop();
-                    mediaPlayer.Open(new Uri(songPath));
+                    mediaPlayer.Stop(); 
+                    mediaPlayer.Open(new Uri(songPath)); 
                 }
                 catch (Exception ex)
                 {
@@ -53,7 +55,7 @@ namespace MusicPlayer
 
         private void PlayButton_Click(object sender, RoutedEventArgs e)
         {
-            if (FavoriteMusicListBox.SelectedItem != null)
+            if (FavoriteSongsComboBox.SelectedItem != null)
             {
                 mediaPlayer.Play();
             }
@@ -75,7 +77,7 @@ namespace MusicPlayer
 
         private void RemoveFromFavoritesButton_Click(object sender, RoutedEventArgs e)
         {
-            string selectedSong = (string)FavoriteMusicListBox.SelectedItem;
+            string selectedSong = (string)FavoriteSongsComboBox.SelectedItem;
 
             if (selectedSong != null)
             {
@@ -85,15 +87,14 @@ namespace MusicPlayer
 
                 File.WriteAllLines(favoritesFilePath, lines);
 
-                MessageBox.Show("Пісню видалено з улюблених.");
-                LoadFavoriteSongs(); 
+                MessageBox.Show("The song has been removed from favorites.");
+                LoadFavoriteSongs();
             }
             else
             {
-                MessageBox.Show("Будь ласка, виберіть пісню для видалення з улюблених.");
+                MessageBox.Show("Please select a song to remove from your favorites.");
             }
         }
-
 
         private void BackToMenuButton_Click(object sender, RoutedEventArgs e)
         {
@@ -102,5 +103,36 @@ namespace MusicPlayer
             MainMenu mainMenu = new MainMenu();
             mainMenu.Show();
         }
+
+        protected override void OnClosing(System.ComponentModel.CancelEventArgs e)
+        {
+            mediaPlayer.Stop(); 
+            base.OnClosing(e);
+        }
+
+        private void MediaPlayer_MediaEnded(object sender, EventArgs e)
+        {
+            if (RepeatModeRadioButton.IsChecked == true)
+            {
+                mediaPlayer.Position = TimeSpan.Zero;
+                mediaPlayer.Play();
+            }
+            else if (SequentialModeRadioButton.IsChecked == true)
+            {
+                int currentIndex = FavoriteSongsComboBox.SelectedIndex;
+
+                if (currentIndex < FavoriteSongsComboBox.Items.Count - 1)
+                {
+                    FavoriteSongsComboBox.SelectedIndex = currentIndex + 1;
+                }
+                else
+                {
+                    FavoriteSongsComboBox.SelectedIndex = 0;
+                }
+
+                PlayButton_Click(FavoriteSongsComboBox, new RoutedEventArgs());
+            }
+        }
+
     }
 }

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Net;
 
 namespace MusicPlayer
 {
@@ -177,6 +178,38 @@ namespace MusicPlayer
         {
             mediaPlayer.Stop();
             base.OnClosing(e);
+        }
+
+        private void DownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            var downloadWindow = new DownloadSongWindow();
+            if (downloadWindow.ShowDialog() == true)
+            {
+                string songUrl = downloadWindow.SongUrl;
+                DownloadSong(songUrl);
+            }
+        }
+
+        private void DownloadSong(string url)
+        {
+            try
+            {
+                using (WebClient client = new WebClient())
+                {
+                    string musicFolder = @"C:\Users\Roman\Desktop\Music";
+                    string fileName = Path.GetFileName(url);  
+                    string destinationPath = Path.Combine(musicFolder, fileName);
+
+                    client.DownloadFile(url, destinationPath);
+
+                    SongsComboBox.Items.Add(fileName);
+                    MessageBox.Show("Song downloaded successfully!");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error downloading song: {ex.Message}");
+            }
         }
     }
 }
